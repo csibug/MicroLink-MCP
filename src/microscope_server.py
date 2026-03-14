@@ -94,6 +94,31 @@ def record_video(seconds: int = 5) -> str:
     logger.error("Video recording failed.")
     return "Error: Could not record video clip."
 
+
+@mcp.tool()
+def annotate_microscope_image(points_json: str) -> list[TextContent | ImageContent]:
+    """
+    Shoots a fresh low-res image, draws numbered annotations onto it and returns the result.
+    Called by Claude after image analysis with exact coordinates.
+    points_json: JSON string, e.g. '[{"x": 620, "y": 480, "label": "1"}]'
+    """
+    import json
+    logger.info("Annotation requested — capturing fresh low-res image...")
+    try:
+        points = json.loads(points_json)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error: Invalid points_json: {e}")]
+    
+    result_path = engine.annotate_image(points)
+    if result_path and os.path.exists(result_path):
+        with open(result_path, "rb") as f:
+            img_data = base64.b64encode(f.read()).decode("utf-8")
+        return [
+            TextContent(type="text", text=f"Annotated image saved: {result_path}"),
+            ImageContent(type="image", data=img_data, mimeType="image/jpeg")
+        ]
+    return [TextContent(type="text", text="Error: Annotation failed.")]
+
 if __name__ == "__main__":
     # FastMCP run handling
     logger.info("Starting Andonstar MCP Server...")

@@ -109,10 +109,13 @@ class AndonstarEngine:
         logger.info(f"Focus Assistant closed. Final Peak: {int(max_f)}")
         return int(last_f), int(max_f)
 
-    def take_snapshot(self):
-        """Captures a high-res image with a timestamped watermark."""
-        cap = self._setup_camera()
-        time.sleep(0.6) # Wait for auto-exposure to settle
+    def take_snapshot(self, low_res=False):
+        """Captures an image with a timestamped watermark.
+        low_res=False: full 1920x1080 (default)
+        low_res=True: uses _setup_camera(low_res=True) for annotate workflow
+        """
+        cap = self._setup_camera(low_res=low_res)
+        time.sleep(0.6)
         ret, frame = cap.read()
         cap.release()
         
@@ -121,17 +124,14 @@ class AndonstarEngine:
             path = os.path.join(self.base_dir, filename)
             
             h, w = frame.shape[:2]
-            # Using our property for the label
             label = f"{self.project_display_name} | {time.strftime('%H:%M:%S')}"
-            
-            # Simple text shadow for readability
             cv2.putText(frame, label, (22, h - 22), 1, 1.5, (0,0,0), 3, cv2.LINE_AA)
             cv2.putText(frame, label, (20, h - 20), 1, 1.5, (255,255,255), 1, cv2.LINE_AA)
             
             cv2.imwrite(path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
-            logger.info(f"Snapshot saved: {filename}")
+            logger.info(f"Snapshot saved: {filename} ({w}x{h})")
             return path
-            
+        
         logger.error("Snapshot failed: Could not read from camera.")
         return None
 
@@ -206,6 +206,28 @@ class AndonstarEngine:
         
         logger.warning("No high-res device found. Defaulting to index 1.")
         return 1
+    
+    def annotate_image(self, points: list[dict]) -> str:
+        """
+        Shoots a fresh low-res image, draws numbered annotations onto it, saves and returns path.
+        points: [{"x": 620, "y": 480, "label": "1"}, ...]
+        """
+        path = self.take_snapshot(low_res=True)
+        if path is None:
+            logger.error("Annotate: could not capture image.")
+            return None
+        
+        frame = cv2.imread(path)
+        for p in points:
+            x, y, label = p["x"], p["y"], p["label"]
+            cv2.circle(frame, (x, y), 12, (0, 0, 255), -1)
+            cv2.circle(frame, (x, y), 12, (255, 255, 255), 2)
+            cv2.putText(frame, label, (x - 5, y + 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+        
+        cv2.imwrite(path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+        logger.info(f"Annotated {len(points)} point(s) onto: {path}")
+        return path
 
 if __name__ == "__main__":
     # Simple self-test
