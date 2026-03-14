@@ -64,7 +64,6 @@ Once the server is running, you can ask Claude to:
 If you encounter issues with resolution or camera detection, use the provided tools in `src/tools/`:
 
 - **`check_capabilities.py`**: Verifies if the OS can see the 1080p stream and displays the FOURCC code.
-- **`debug_hd_capture.py`**: A stress-test script to force the MJPG sensor initialization (Dreg Method).
 
 ## License
 
