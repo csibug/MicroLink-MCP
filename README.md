@@ -10,6 +10,7 @@ This project provides a **Model Context Protocol (MCP)** implementation for Ando
 - **Interactive Focus Assistant**: A real-time sharpness scoring window with peak value tracking.
 - **Project-Based Organization**: Automatic watermarking and folder-based sorting for your repair captures.
 - **Audio Feedback**: System beeps to notify the user of video recording states.
+- **AI-Powered Annotation**: Captures a fresh image and lets AI place numbered markers on exact coordinates — no manual path handling required.
 
 ## Project Structure
 
